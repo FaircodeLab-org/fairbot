@@ -1,0 +1,7 @@
+## fairbot
+
+fairbot
+
+#### License
+
+mit
