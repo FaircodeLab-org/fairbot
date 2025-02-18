@@ -5,6 +5,13 @@ app_description = "fairbot"
 app_email = "reddysrivinayofficial@gmail.com"
 app_license = "mit"
 
+
+
+web_include_css = [
+    "/assets/fairbot/css/chatbot.css",
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css",
+]
+web_include_js = "/assets/fairbot/js/chatbot.js"
 # Apps
 # ------------------
 

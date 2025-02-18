@@ -1,0 +1,59 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-02-18 13:45:18.339387",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "question",
+  "answer",
+  "subject",
+  "embeddings"
+ ],
+ "fields": [
+  {
+   "fieldname": "question",
+   "fieldtype": "Data",
+   "label": "Question"
+  },
+  {
+   "fieldname": "answer",
+   "fieldtype": "Small Text",
+   "label": "Answer"
+  },
+  {
+   "fieldname": "subject",
+   "fieldtype": "Data",
+   "label": "Subject"
+  },
+  {
+   "fieldname": "embeddings",
+   "fieldtype": "Int",
+   "label": "Embeddings"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-02-18 13:49:11.543921",
+ "modified_by": "Administrator",
+ "module": "fairbot",
+ "name": "FAQS",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
