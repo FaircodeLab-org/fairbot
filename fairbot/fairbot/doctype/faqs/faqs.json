@@ -7,19 +7,23 @@
  "field_order": [
   "question",
   "answer",
-  "subject",
-  "embeddings"
+  "embedding",
+  "subject"
  ],
  "fields": [
   {
    "fieldname": "question",
    "fieldtype": "Data",
-   "label": "Question"
+   "in_list_view": 1,
+   "label": "Question",
+   "reqd": 1
   },
   {
    "fieldname": "answer",
    "fieldtype": "Small Text",
-   "label": "Answer"
+   "in_list_view": 1,
+   "label": "Answer",
+   "reqd": 1
   },
   {
    "fieldname": "subject",
@@ -27,14 +31,14 @@
    "label": "Subject"
   },
   {
-   "fieldname": "embeddings",
-   "fieldtype": "Int",
+   "fieldname": "embedding",
+   "fieldtype": "Text",
    "label": "Embeddings"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-02-18 13:49:11.543921",
+ "modified": "2025-02-18 14:32:07.768984",
  "modified_by": "Administrator",
  "module": "fairbot",
  "name": "FAQS",
