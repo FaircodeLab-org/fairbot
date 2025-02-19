@@ -232,11 +232,12 @@ document.addEventListener('DOMContentLoaded', function () {
         success: function (r) {
           // Remove typing indicator
           hideTypingIndicator();
+          
   
           if (r.message) {
             var botMessage = document.createElement('div');
             botMessage.className = 'bot-message message';
-            botMessage.innerHTML = r.message;
+            botMessage.innerHTML = r.message.analysis;
             chatWindow.appendChild(botMessage);
             appendTimestamp(botMessage);
   

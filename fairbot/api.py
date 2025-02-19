@@ -244,132 +244,56 @@ def get_gpt_interpreted_response(user_message, relevant_faqs):
         frappe.log_error(f"OpenAI API Error: {str(e)}", "Chatbot Response Error")
         return "I'm sorry, I'm having trouble responding right now. Please try again later."
 
+
 @frappe.whitelist(allow_guest=True)
 def process_image():
-    if 'image' in frappe.request.files:
-        image_file = frappe.request.files['image']
+    OPENAI_API_KEY = frappe.local.conf.get("openai_api_key", None)
+    OPENAI_ENDPOINT = "https://api.openai.com/v1/chat/completions"
 
-        # Call the Plant.id API with the image
-        diagnosis = get_plant_diagnosis(image_file)
+    if 'image' not in frappe.request.files:
+        return {"error": "No image provided."}
 
-        # Return the diagnosis to the frontend
-        return diagnosis
-    else:
-        return "No image provided."
+    image_file = frappe.request.files['image']
+    
+    # Convert image to base64
+    image_base64 = base64.b64encode(image_file.read()).decode('utf-8')
 
-@frappe.whitelist(allow_guest=True)
-def get_plant_diagnosis(image_file):
-    # Retrieve the Plant.id API key from the site configuration
-    plantid_api_key = frappe.conf.get("plantid_api_key")
-    if not plantid_api_key:
-        frappe.log_error("Plant.id API key not found in site config.", "Chatbot Error")
-        return "I'm sorry, I cannot process your request at the moment."
-
-    url = "https://api.plant.id/v3/identification"
-
+    # Prepare OpenAI API request
     headers = {
-        "Content-Type": "application/json",
-        "Api-Key": plantid_api_key,
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
+        "Content-Type": "application/json"
     }
 
-    # Read the image content
-    image_bytes = image_file.read()
-    if not image_bytes:
-        frappe.log_error("Image file is empty.", "Image Processing Error")
-        return "The uploaded image is empty or unreadable."
-
-    # Convert the image to base64
-    encoded_image = base64.b64encode(image_bytes).decode('utf-8')
-
-    # Prepare the request payload
     payload = {
-        "images": [encoded_image],
-        "health": "all",  # Include health assessment
-        "classification_level": "species",  # Level of classification
-        # Omit 'similar_images' if False
-    }
-
-    # Prepare query parameters
-    params = {
-        "plant_details": "common_names,url,wiki_description,wiki_image,taxonomy,synonyms",
-        "disease_details": "description,treatment",
-        "language": "en",
+        "model": "gpt-4-turbo",
+        "messages": [
+            {"role": "system", "content": "You are an AI that analyzes images and provides insights."},
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Analyze this image and describe its contents."},
+                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}}
+                ]
+            }
+        ],
+        "max_tokens": 500
     }
 
     try:
-        # Make the POST request with query parameters
-        response = requests.post(url, headers=headers, params=params, json=payload)
+        # Send request to OpenAI API
+        response = requests.post(OPENAI_ENDPOINT, json=payload, headers=headers)
+        response_data = response.json()
 
-        # Log response status and content for debugging
-        frappe.logger().debug(f"Plant.id API response status code: {response.status_code}")
-        frappe.logger().debug(f"Plant.id API response text: {response.text}")
+        if "error" in response_data:
+            error_message = response_data["error"].get("message", "Unknown error")
+            frappe.log_error(f"OpenAI Error: {error_message[:120]}", "OpenAI API Debug")  # Truncate error log
+            return {"error": error_message}
 
-        # Check if response is successful
-        if response.ok:
-            result = response.json()
-            # Process the API Response
-            diagnosis = process_plant_id_response(result)
-            return diagnosis
-        else:
-            error_message = f"Plant.id API Error {response.status_code}: {response.text}"
-            frappe.log_error(error_message[:140], "Plant.id API Error")  # Truncate error_message
-            return "An error occurred while processing the image. Please try again later."
-    except Exception as e:
-        frappe.log_error(f"Exception in get_plant_diagnosis: {str(e)}\nTraceback:\n{frappe.get_traceback()}", "Plant.id API Error")
-        return "An error occurred while processing the image. Please try again later."
+        # Extract the AI response
+        analysis = response_data.get("choices", [{}])[0].get("message", {}).get("content", "No response received.")
 
-def process_plant_id_response(result):
-    # Extract plant suggestions
-    classification = result.get('result', {}).get('classification', {})
-    suggestions = classification.get('suggestions', [])
+        return {"message": "Image processed successfully.", "analysis": analysis}
 
-    if suggestions:
-        # Take the top suggestion
-        suggestion = suggestions[0]
-        plant_name = suggestion.get('name', 'Unknown plant')
-        details = suggestion.get('details', {})
-        common_names = details.get('common_names', [])
-        description = details.get('wiki_description', {}).get('value', '')
-        plant_url = details.get('url', '')
-
-        response_message = f"<b>Plant Name:</b> {plant_name}<br>"
-        if common_names:
-            response_message += f"<b>Common Names:</b> {', '.join(common_names)}<br>"
-        if description:
-            response_message += f"<b>Description:</b> {description}<br>"
-        if plant_url:
-            response_message += f"<a href='{plant_url}' target='_blank'>Learn more</a><br><br>"
-
-        # Health assessment
-        health_assessment = result.get('result', {})
-        is_healthy = health_assessment.get('is_healthy', {}).get('binary', True)
-        if not is_healthy:
-            response_message += "<b>The plant may have health issues.</b><br>"
-            diseases = health_assessment.get('disease', {}).get('suggestions', [])
-            if diseases:
-                response_message += "<b>Possible Diseases:</b><br>"
-                for disease in diseases:
-                    name = disease.get('name', 'Unknown disease')
-                    disease_details = disease.get('details', {})
-                    disease_description = disease_details.get('description', {}).get('value', '')
-                    treatment = disease_details.get('treatment', {})
-                    response_message += f"<b>{name}</b><br>"
-                    if disease_description:
-                        response_message += f"Description: {disease_description}<br>"
-                    if treatment:
-                        # Treatment can be a dictionary with 'biological', 'chemical', 'prevention'
-                        treatment_info = []
-                        for key, value in treatment.items():
-                            if value:
-                                treatment_info.append(f"{key.capitalize()}: {value}")
-                        if treatment_info:
-                            response_message += f"Treatment: {'; '.join(treatment_info)}<br>"
-                    response_message += "<br>"
-            else:
-                response_message += "No specific diseases identified.<br>"
-        else:
-            response_message += "<b>The plant appears to be healthy.</b><br>"
-
-        return response_message
-    else:
-        return "Could not identify the plant or its health status."
+    except requests.exceptions.RequestException as e:
+        frappe.log_error(f"Request Exception: {str(e)[:120]}", "OpenAI API Debug")
+        return {"error": "Failed to connect to OpenAI API."}
