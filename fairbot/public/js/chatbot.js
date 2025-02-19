@@ -215,7 +215,7 @@ document.addEventListener('DOMContentLoaded', function () {
   
     function sendImage(file) {
       // Show typing indicator
-      showTypingIndicator();
+      // showTypingIndicator();
   
       var formData = new FormData();
       formData.append('image', file);
@@ -237,7 +237,7 @@ document.addEventListener('DOMContentLoaded', function () {
           if (r.message) {
             var botMessage = document.createElement('div');
             botMessage.className = 'bot-message message';
-            botMessage.innerHTML = r.message.analysis;
+            botMessage.innerHTML = r.message.analysis.replace(/\*\*(.*?)\*\*/g, " <b>$1</b> ");
             chatWindow.appendChild(botMessage);
             appendTimestamp(botMessage);
   
@@ -260,25 +260,51 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     }
   
+    // function displayUserImage(file) {
+    //   var reader = new FileReader();
+    //   reader.onload = function (e) {
+    //     var userMessage = document.createElement('div');
+    //     userMessage.className = 'user-message message';
+  
+    //     // Create an image element
+    //     var img = document.createElement('img');
+    //     img.src = e.target.result;
+    //     img.style.maxWidth = '200px';
+    //     img.style.borderRadius = '10px';
+  
+    //     userMessage.appendChild(img);
+    //     chatWindow.appendChild(userMessage);
+    //     appendTimestamp(userMessage);
+    //     chatWindow.scrollTop = chatWindow.scrollHeight;
+    //   };
+    //   reader.readAsDataURL(file);
+    // }
     function displayUserImage(file) {
       var reader = new FileReader();
       reader.onload = function (e) {
-        var userMessage = document.createElement('div');
-        userMessage.className = 'user-message message';
+          var userMessage = document.createElement('div');
+          userMessage.className = 'user-message message';
   
-        // Create an image element
-        var img = document.createElement('img');
-        img.src = e.target.result;
-        img.style.maxWidth = '200px';
-        img.style.borderRadius = '10px';
+          var img = new Image();
+          img.src = e.target.result;
+          img.style.maxWidth = '200px';
+          img.style.borderRadius = '10px';
   
-        userMessage.appendChild(img);
-        chatWindow.appendChild(userMessage);
-        appendTimestamp(userMessage);
-        chatWindow.scrollTop = chatWindow.scrollHeight;
+          // Ensure the image is appended before showing typing indicator
+          img.onload = function () {
+              userMessage.appendChild(img);
+              chatWindow.appendChild(userMessage);
+              appendTimestamp(userMessage);
+              chatWindow.scrollTop = chatWindow.scrollHeight;
+  
+              // Small delay to ensure image renders first
+              setTimeout(showTypingIndicator,100);
+          };
       };
       reader.readAsDataURL(file);
-    }
+  }
+  
+  
   
     function formatTime(date) {
       var hours = date.getHours();
