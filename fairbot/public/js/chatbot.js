@@ -39,6 +39,11 @@ document.addEventListener('DOMContentLoaded', function () {
         <div id="chat-window">
           <!-- Chat messages will appear here -->
         </div>
+        <div id="chat-options" class="chat-options">
+          <button id="btn-contact-sales">📞 Contact Sales</button>
+          <button id="btn-lead-form">📋 Fill Lead Form</button>
+          <button id="btn-support">💬 Chat with Support</button>
+        </div>
         <!-- Input Container -->
         <form id="chat-form" class="input-container">
           <!-- New Image Upload Button -->
@@ -92,7 +97,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (!chatWindow.dataset.hasWelcome) {
         var welcomeMessage = document.createElement('div');
         welcomeMessage.className = 'bot-message message';
-        welcomeMessage.innerHTML = '🌐 Hello! I\'m your assistant from FaircodeLab. How can I assist you today?';
+        welcomeMessage.innerHTML = '🌐 Hello! I\'m your AI assistant from FaircodeLab. How can I assist you today?';
         chatWindow.appendChild(welcomeMessage);
         appendTimestamp(welcomeMessage);
         chatWindow.dataset.hasWelcome = 'true';
@@ -122,13 +127,188 @@ document.addEventListener('DOMContentLoaded', function () {
         chatbotMinimize.setAttribute('aria-label', 'Minimize Chat');
       }
     };
-  
+    document.getElementById("btn-lead-form").onclick = function () {
+      showLeadForm();
+    };
+    document.getElementById("btn-contact-sales").onclick = function () {
+      var chatOptions = document.getElementById("chat-options");
+      if (chatOptions) {
+        chatOptions.style.display = "none";
+      }
+      var botMessage = document.createElement("div");
+      botMessage.className = 'bot-message message';
+      botMessage.textContent = "📞 You can contact our sales team at sales@faircodelab.com"
+      chatWindow.appendChild(botMessage);
+      appendTimestamp(botMessage);
+    };
+    document.getElementById("btn-support").onclick = function () {
+      var chatOptions = document.getElementById("chat-options");
+      if (chatOptions) {
+        chatOptions.style.display = "none";
+      }
+      var botMessage = document.createElement("div");
+      botMessage.className = 'bot-message message';
+      botMessage.textContent = "💬 Connecting you to support..."
+      chatWindow.appendChild(botMessage);
+      appendTimestamp(botMessage);
+    };
+    
     // Send button click event
     chatForm.addEventListener('submit', function (e) {
       e.preventDefault();
       sendMessage();
     });
-  
+
+
+    let userInput = document.getElementById('user-input'); // Assuming your general input field has an ID of 'user-input'
+
+    function showLeadForm() {
+      var chatOptions = document.getElementById("chat-options");
+      if (chatOptions) {
+        chatOptions.style.display = "none";
+      }
+    
+      // Disable the general input field
+      disableGeneralInput();
+    
+      askQuestion(0);
+    }
+    
+    const questions = [
+      { key: "first_name", text: "📋 What is your name?" },
+      { key: "email_id", text: "📧 What is your email?", validate: validateEmail },
+      { key: "phone", text: "📞 What is your phone number?" }
+    ];
+    
+    let leadData = {};
+    
+    function askQuestion(index) {
+      if (index >= questions.length) {
+        submitLeadForm();
+        return;
+      }
+    
+      // Create bot's message
+      var botMessage = document.createElement("div");
+      botMessage.className = 'bot-message message';
+      botMessage.textContent = questions[index].text;
+      chatWindow.appendChild(botMessage);
+      appendTimestamp(botMessage);
+    
+      // Create input field for user's response
+      var inputField = document.createElement("input");
+      inputField.className = 'user-message message';
+      inputField.setAttribute("type", "text");
+      inputField.setAttribute("placeholder", "Type your answer...");
+      chatWindow.appendChild(inputField);
+      inputField.focus();
+    
+      inputField.addEventListener("keypress", function (event) {
+        if (event.key === "Enter") {
+          var answer = inputField.value.trim();
+          if (!answer) return;
+    
+          // Validate the input if required
+          if (questions[index].validate && !questions[index].validate(answer)) {
+            alert("Invalid input. Please try again.");
+            return;
+          }
+    
+          // Store the answer and show it as a message
+          leadData[questions[index].key] = answer;
+    
+          // Create a user message to show the answer
+          var userMessage = document.createElement("div");
+          userMessage.className = 'user-message message';
+          userMessage.textContent = answer; // Show the entered answer here
+          chatWindow.appendChild(userMessage);
+          appendTimestamp(userMessage);
+    
+          // Remove the input field and proceed to the next question
+          inputField.remove();
+          askQuestion(index + 1);
+        }
+      });
+    }
+    
+    function validateEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+    
+    async function submitLeadForm() {
+      if (!leadData || Object.keys(leadData).length === 0) {
+        console.error("⚠️ leadData is empty or undefined!");
+        return;
+      }
+    
+      try {
+        const response = await fetch("/api/resource/Lead", {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": "token 37573742010c177:2e77aaa7081da8b"
+          },
+          body: JSON.stringify(leadData),
+        });
+    
+        const data = await response.json();
+    
+        var botMessage = document.createElement("div");
+    
+        if (response.ok) {
+          botMessage.textContent = "✅ Thank you! Our team will contact you soon.";
+          botMessage.className = 'bot-message message';
+        } else {
+          botMessage.textContent = `❌ Error: ${data.message || "Failed to submit."}`;
+          botMessage.className = 'bot-message message';
+        }
+    
+        chatWindow.appendChild(botMessage);
+        appendTimestamp(botMessage);
+    
+        // Enable general input after lead form submission
+        enableGeneralInput();
+    
+        setTimeout(() => {
+          if (typeof chatOptions !== "undefined" && chatOptions) {
+            chatOptions.style.display = "block";
+          }
+        }, 3000);
+      } catch (error) {
+        console.error("❌ Fetch Error:", error);
+    
+        var botMessage = document.createElement("div");
+        botMessage.textContent = "❌ Error submitting the form. Please try again.";
+        chatWindow.appendChild(botMessage);
+        appendTimestamp(botMessage);
+      }
+    }
+    
+    // Disable general input
+    function disableGeneralInput() {
+      if (userInput) {
+        userInput.disabled = true; // Disable the general input field
+      }
+    }
+    
+    // Enable general input
+    function enableGeneralInput() {
+      if (userInput) {
+        userInput.disabled = false; // Enable the general input field
+      }
+    }
+    
+    function appendTimestamp(message) {
+      var timestamp = document.createElement("div");
+      timestamp.className = "timestamp";
+      timestamp.textContent = new Date().toLocaleTimeString();
+      message.appendChild(timestamp);
+    }
+    
+
+        
+    
+    
     // Voice input button click event
     voiceButton.onclick = function () {
       startVoiceRecognition();
@@ -158,6 +338,11 @@ document.addEventListener('DOMContentLoaded', function () {
     function sendMessage() {
       var userInput = userInputField.value.trim();
       if (userInput === '') return;
+
+      var chatOptions = document.getElementById("chat-options");
+      if (chatOptions) {
+        chatOptions.style.display = "none";
+      }
   
       var currentTime = new Date();
   
@@ -190,7 +375,27 @@ document.addEventListener('DOMContentLoaded', function () {
           if (r.message) {
             var botMessage = document.createElement('div');
             botMessage.className = 'bot-message message';
-            botMessage.innerHTML = r.message;
+            // Format the r.message by adding HTML structure
+            var formattedMessage = r.message;
+
+            // Fix extra spaces before colons
+            formattedMessage = formattedMessage.replace(/\s+:\s+/g, ": ");
+
+            // Convert **bold text** to <strong>
+            formattedMessage = formattedMessage.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+
+            // Convert new lines to <br> for readability
+            formattedMessage = formattedMessage.replace(/\n/g, "<br>");
+
+            // Convert numbered lists properly (all items in one <ol>)
+            formattedMessage = formattedMessage.replace(/(?:\d+\.\s(.*?))(?:<br>|\n|$)/g, "<li>$1</li>");
+            formattedMessage = formattedMessage.replace(/(<li>.*?<\/li>)+/g, "<ol>$&</ol>");
+
+            // Convert unordered lists properly (all items in one <ul>)
+            formattedMessage = formattedMessage.replace(/(?:[-*]\s(.*?))(?:<br>|\n|$)/g, "<li>$1</li>");
+            formattedMessage = formattedMessage.replace(/(<li>.*?<\/li>)+/g, "<ul>$&</ul>");
+            
+            botMessage.innerHTML = formattedMessage;
             chatWindow.appendChild(botMessage);
             appendTimestamp(botMessage);
   
@@ -259,26 +464,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       });
     }
-  
-    // function displayUserImage(file) {
-    //   var reader = new FileReader();
-    //   reader.onload = function (e) {
-    //     var userMessage = document.createElement('div');
-    //     userMessage.className = 'user-message message';
-  
-    //     // Create an image element
-    //     var img = document.createElement('img');
-    //     img.src = e.target.result;
-    //     img.style.maxWidth = '200px';
-    //     img.style.borderRadius = '10px';
-  
-    //     userMessage.appendChild(img);
-    //     chatWindow.appendChild(userMessage);
-    //     appendTimestamp(userMessage);
-    //     chatWindow.scrollTop = chatWindow.scrollHeight;
-    //   };
-    //   reader.readAsDataURL(file);
-    // }
+
     function displayUserImage(file) {
       var reader = new FileReader();
       reader.onload = function (e) {

@@ -236,7 +236,7 @@ def get_gpt_interpreted_response(user_message, relevant_faqs):
                 {"role": "system", "content": system_prompt.strip()},
                 {"role": "user", "content": user_message.strip()}
             ],
-            max_tokens=150,
+            max_tokens=200,
             temperature=0.7,
         )
         return response.choices[0].message['content'].strip()
