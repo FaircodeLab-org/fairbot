@@ -297,3 +297,15 @@ def process_image():
     except requests.exceptions.RequestException as e:
         frappe.log_error(f"Request Exception: {str(e)[:120]}", "OpenAI API Debug")
         return {"error": "Failed to connect to OpenAI API."}
+
+
+@frappe.whitelist()
+def get_api_credentials():
+    """Fetch API Key and Secret securely from site_config.json."""
+    api_key = frappe.conf.get("api_key")
+    api_secret = frappe.conf.get("api_secret")
+
+    if not api_key or not api_secret:
+        frappe.throw(_("API credentials not found"))
+
+    return {"api_key": api_key, "api_secret": api_secret}

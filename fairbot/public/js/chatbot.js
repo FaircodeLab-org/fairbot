@@ -246,7 +246,7 @@ document.addEventListener('DOMContentLoaded', function () {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
-            "Authorization": "token 37573742010c177:2e77aaa7081da8b"
+            "Authorization": "token c0a19361bb4ff70:677887ca5b9e1f6"
           },
           body: JSON.stringify(leadData),
         });
