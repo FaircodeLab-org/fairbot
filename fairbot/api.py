@@ -299,7 +299,7 @@ def process_image():
         return {"error": "Failed to connect to OpenAI API."}
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_api_credentials():
     """Fetch API Key and Secret securely from site_config.json."""
     api_key = frappe.conf.get("api_key")

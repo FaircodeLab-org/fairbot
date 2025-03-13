@@ -234,7 +234,21 @@ document.addEventListener('DOMContentLoaded', function () {
     function validateEmail(email) {
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     }
-    
+    async function getApiCredentials() {
+      try {
+          const response = await fetch("/api/method/your_app.api.get_api_credentials");
+          const data = await response.json();
+  
+          if (data.message) {
+              return data.message;
+          } else {
+              throw new Error("Failed to fetch API credentials");
+          }
+      } catch (error) {
+          console.error("Error fetching API credentials:", error);
+          return null;
+      }
+  }
     async function submitLeadForm() {
       if (!leadData || Object.keys(leadData).length === 0) {
         console.error("⚠️ leadData is empty or undefined!");
@@ -242,24 +256,33 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     
       try {
-        const response = await fetch("/api/resource/Lead", {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "Authorization": "token c0a19361bb4ff70:677887ca5b9e1f6"
-          },
-          body: JSON.stringify(leadData),
+        // Fetch API credentials dynamically
+        const response = await fetch("/api/method/fairbot.api.get_api_credentials");
+        const data = await response.json();
+
+        if (!data.message || !data.message.api_key || !data.message.api_secret) {
+            throw new Error("Failed to fetch API credentials");
+        }
+        
+        const { api_key, api_secret } = data.message;
+        // Submit lead using fetched credentials
+        const leadResponse = await fetch("/api/resource/Lead", {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "Authorization": `token ${api_key}:${api_secret}`
+            },
+            body: JSON.stringify(leadData),
         });
     
-        const data = await response.json();
-    
+        const leadDataResponse= await leadResponse.json();
         var botMessage = document.createElement("div");
     
-        if (response.ok) {
+        if (leadResponse.ok) {
           botMessage.textContent = "✅ Thank you! Our team will contact you soon.";
           botMessage.className = 'bot-message message';
         } else {
-          botMessage.textContent = `❌ Error: ${data.message || "Failed to submit."}`;
+          botMessage.textContent = `❌ Error: ${leadDataResponse.message || "Failed to submit."}`;
           botMessage.className = 'bot-message message';
         }
     
@@ -421,6 +444,10 @@ document.addEventListener('DOMContentLoaded', function () {
     function sendImage(file) {
       // Show typing indicator
       // showTypingIndicator();
+      var chatOptions = document.getElementById("chat-options");
+      if (chatOptions) {
+        chatOptions.style.display = "none";
+      }
   
       var formData = new FormData();
       formData.append('image', file);
