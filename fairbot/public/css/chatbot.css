@@ -354,7 +354,7 @@
 
 /* Adjustments for minimized state */
 .chatbot-container.minimized {
-    max-height: 80px;
+    max-height: 70px;
 }
 
 .chatbot-container.minimized #chat-window,
