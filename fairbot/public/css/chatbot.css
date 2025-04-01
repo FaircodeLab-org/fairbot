@@ -10,61 +10,47 @@
     padding: 0;
 }
 
-/* Chatbot Toggle Button */
-.chatbot-toggle-button {
+
+.chat-launcher {
     position: fixed;
-    bottom: 30px;
-    right: 30px;
-    background-color: #42A5F5; /* Blue color */
+    bottom: 20px;
+    right: 20px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    z-index: 1000;
+    }
+    
+    .chat-icon img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%; /* Makes it circular (optional) */
+    }
+    
+    .chat-info p {
+    font-weight: bold;
+    font-size: 16px;
+    color: #333;
+    margin: 0;
+    padding: 0 10px;
+    }
+    
+    .chat-with-ai-button {
+    background-color: #42A5F5;
     color: #fff;
     border: none;
-    border-radius: 50%;
-    width: 65px;
-    height: 65px;
-    font-size: 28px;
+    border-radius: 5px;
+    padding: 5px 10px;
     cursor: pointer;
-    z-index: 1000;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-    animation: floatUp 2s ease-in-out infinite;
-    transition: transform 0.3s ease;
-}
-
-/* Tooltip for the Toggle Button */
-.chatbot-toggle-button::after {
-    content: 'Chat with Fairbot!';
-    position: absolute;
-    bottom: 75px;
-    right: 50%;
-    transform: translateX(50%);
-    background-color: #1E88E5; /* Darker blue */
-    color: #fff;
-    padding: 6px 10px;
-    border-radius: 6px;
-    font-size: 12px;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s;
-    white-space: nowrap;
-}
-
-.chatbot-toggle-button:hover::after {
-    opacity: 1;
-    visibility: visible;
-}
-
-.chatbot-toggle-button:hover {
-    transform: translateY(-5px);
-}
-
-/* Floating animation */
-@keyframes floatUp {
-    0%, 100% {
-        transform: translateY(0);
+    margin-left: 10px;
     }
-    50% {
-        transform: translateY(-10px);
+    
+    .chat-with-ai-button:hover {
+    background-color: #1E88E5;
     }
-}
 
 /* Chatbot Container */
 .chatbot-container {
@@ -447,3 +433,31 @@
     background-color: #218838;
   }
   
+  /* Mobile Responsive Styles */
+@media only screen and (max-width: 600px) {
+    .chat-launcher {
+        bottom: 15px; /* Slightly more spacing from the bottom */
+        right: 15px; /* Reduced right margin */
+        width: 90%; /* Launcher fills most of the viewport width */
+        max-width: none; /* Remove a max-width restriction */
+        border-radius: 5px; /* Optionally less rounding */
+        padding: 8px;
+        flex-direction: row; /* By default, keep row direction but adjust as needed */
+    }
+
+    .chat-icon img {
+        width: 30px;
+        height: 30px;
+    }
+
+    .chat-info p {
+        font-size: 14px;
+        padding: 0 8px;
+    }
+
+    .chat-with-ai-button {
+        padding: 5px 8px;
+        font-size: 14px;
+        margin-left: 5px;
+    }
+}

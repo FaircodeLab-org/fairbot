@@ -10,6 +10,7 @@ import numpy as np
 import os
 import time
 
+
 # Import helper functions from faqs.py
 from fairbot.fairbot.doctype.faqs.faqs import get_openai_api_key, get_embedding
 
@@ -18,167 +19,7 @@ faq_embeddings = []
 embeddings_initialized = False
 embeddings_lock = threading.Lock()
 
-# def initialize_faq_embeddings():
-#     """
-#     Initializes embeddings for FAQs by loading them from the database.
-#     """
-#     global faq_embeddings
-#     global embeddings_initialized
 
-#     with embeddings_lock:
-#         if embeddings_initialized:
-#             # Embeddings have already been initialized
-#             return
-
-#         try:
-#             # Fetch all FAQs with their embeddings
-#             faqs = frappe.get_all('FAQS', fields=['name', 'question', 'answer', 'embedding'])
-
-#             # Load embeddings for each FAQ
-#             faq_embeddings = []
-#             for faq in faqs:
-#                 if faq['embedding']:
-#                     try:
-#                         # Load the embedding from JSON string
-#                         embedding = json.loads(faq['embedding'])
-#                         faq_embeddings.append({
-#                             'name': faq['name'],
-#                             'question': faq['question'],
-#                             'answer': faq['answer'],
-#                             'embedding': embedding
-#                         })
-#                         frappe.logger().debug(f"Loaded embedding for FAQ '{faq['name']}': First 5 values: {embedding[:5]}...")
-#                     except Exception as e:
-#                         frappe.log_error(f"Error loading embedding for FAQ {faq['name']}: {str(e)}", "Chatbot Embedding Error")
-#                 else:
-#                     # If embedding is missing, compute and save it
-#                     openai_api_key = get_openai_api_key()
-#                     if not openai_api_key:
-#                         frappe.log_error("OpenAI API key is not set.", "Chatbot Error")
-#                         continue
-
-#                     embedding = get_embedding(faq['question'])
-#                     # Save the embedding in the database
-#                     frappe.db.set_value('FAQS', faq['name'], 'embedding', json.dumps(embedding))
-#                     frappe.db.commit()
-#                     faq_embeddings.append({
-#                         'name': faq['name'],
-#                         'question': faq['question'],
-#                         'answer': faq['answer'],
-#                         'embedding': embedding
-#                     })
-#             embeddings_initialized = True  # Mark embeddings as initialized
-#         except Exception as e:
-#             frappe.log_error(f"Error initializing embeddings: {str(e)}", "Chatbot Embedding Initialization Error")
-
-# @frappe.whitelist(allow_guest=True)
-# def get_bot_response(user_message):
-#     """
-#     Public method to get the bot's response.
-#     """
-#     # Ensure embeddings are initialized
-#     if not embeddings_initialized:
-#         initialize_faq_embeddings()
-
-#     response = process_message(user_message)
-#     return response
-
-# def process_message(user_message):
-#     """
-#     Processes the user's message and returns the bot's response.
-#     """
-#     user_message = user_message.strip()
-
-#     # Search the knowledge base for an exact match
-#     faq_answer = search_faq(user_message)
-#     if faq_answer:
-#         return faq_answer
-
-#     # If no exact match, use embeddings to find relevant FAQs
-#     relevant_faqs = get_relevant_faqs(user_message, top_k=5)
-#     gpt_answer = get_gpt_interpreted_response(user_message, relevant_faqs)
-#     return gpt_answer
-
-# def search_faq(user_message):
-#     """
-#     Searches for an exact match in the FAQs.
-#     """
-#     faqs = frappe.get_all('FAQS', fields=['question', 'answer'])
-#     for faq in faqs:
-#         if user_message.lower() == faq['question'].lower():
-#             return faq['answer']
-#     return None
-
-# def get_embedding(text, model="text-embedding-ada-002"):
-#     """
-#     Generates an embedding for the given text using the specified OpenAI model.
-#     """
-#     # Ensure OpenAI API key is set
-#     if not openai.api_key:
-#         openai_api_key = get_openai_api_key()
-#         if not openai_api_key:
-#             frappe.log_error("OpenAI API key is not set.", "Chatbot Error")
-#             return []
-
-#         openai.api_key = openai_api_key
-
-#     try:
-#         response = openai.Embedding.create(
-#             input=[text],
-#             model=model
-#         )
-#         embedding = response['data'][0]['embedding']
-#         return embedding
-#     except Exception as e:
-#         frappe.log_error(f"Error generating embedding: {str(e)}", "Chatbot Embedding Error")
-#         return []
-
-# def cosine_similarity(a, b):
-#     """
-#     Computes the cosine similarity between two vectors.
-#     """
-#     a = np.array(a)
-#     b = np.array(b)
-#     if np.linalg.norm(a) == 0 or np.linalg.norm(b) == 0:
-#         return 0
-#     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
-
-# def get_relevant_faqs(user_message, top_k=5):
-#     global faq_embeddings
-
-#     if not faq_embeddings:
-#         frappe.log_error("FAQ embeddings are not initialized.", "Chatbot Error")
-#         return []
-
-#     # Generate embedding for user message
-#     user_embedding = get_embedding(user_message)
-#     if not user_embedding:
-#         frappe.log_error("Failed to get embedding for user message.", "Chatbot Error")
-#         return []
-#     frappe.logger().debug(f"Generated embedding for user message: First 5 values: {user_embedding[:5]}...")
-
-#     # Compute cosine similarity between user message and FAQs
-#     similarities = []
-#     for faq in faq_embeddings:
-#         try:
-#             sim = cosine_similarity(user_embedding, faq['embedding'])
-#             similarities.append((sim, faq))
-#             # Log each similarity score
-#             frappe.logger().debug(f"Similarity between user message and FAQ '{faq['name']}': {sim}")
-#         except Exception as e:
-#             frappe.log_error(f"Error computing similarity for FAQ {faq['name']}: {str(e)}", "Chatbot Similarity Error")
-
-#     # Sort FAQs by similarity score in descending order
-#     similarities.sort(key=lambda x: x[0], reverse=True)
-
-#     # # Return top_k most similar FAQs
-#     # relevant_faqs = [faq for sim, faq in similarities[:top_k] if sim > 0]  # Exclude FAQs with zero similarity
-#     MIN_SIMILARITY_THRESHOLD = 0.0  # You can adjust this value
-#     relevant_faqs = [faq for sim, faq in similarities[:top_k] if sim >= MIN_SIMILARITY_THRESHOLD]
-
-#     # Log the selected relevant FAQs
-#     frappe.logger().debug(f"Top {len(relevant_faqs)} relevant FAQs selected.")
-#     return relevant_faqs
 def initialize_faq_embeddings():
     """
     Initializes embeddings for FAQs by loading them from the database.
@@ -471,3 +312,4 @@ def get_api_credentials():
         frappe.throw(_("API credentials not found"))
 
     return {"api_key": api_key, "api_secret": api_secret}
+
