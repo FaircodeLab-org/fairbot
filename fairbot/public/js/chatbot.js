@@ -27,13 +27,32 @@ document.addEventListener('DOMContentLoaded', function () {
       background-color: #fff;
       border-radius: 20px;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-      padding: 15px;
+      padding: 15px 44px 15px 15px;
       z-index: 1000;
       display: flex;
       align-items: center;
       font-family: Arial, sans-serif;
       border: 1px solid #ddd;
   ">
+      <div style="
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          display: flex;
+          gap: 6px;
+      ">
+          <button id="chat-launcher-close" aria-label="Close Chat Launcher" title="Close" style="
+              width: 22px;
+              height: 22px;
+              border: none;
+              border-radius: 50%;
+              background: #f3f3f3;
+              color: #555;
+              font-size: 14px;
+              line-height: 22px;
+              cursor: pointer;
+          ">x</button>
+      </div>
       <div class="chat-icon" style="margin-right: 12px;">
           <img src="/assets/fairbot/images/chat_icon.png" alt="Chat Icon" style="
               width: 100px;
@@ -83,8 +102,68 @@ document.addEventListener('DOMContentLoaded', function () {
               ">
                   Request contact
               </a>
+          </div>
       </div>
   </div>
+  <style>
+    .chatbot-toggle-button {
+      position: fixed;
+      bottom: 80px;
+      right: 30px;
+      background-color: #3d73b5;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 72px;
+      height: 72px;
+      font-size: 28px;
+      cursor: pointer;
+      z-index: 1001;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+      animation: floatUp 2s ease-in-out infinite;
+      transition: transform 0.3s ease;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .chatbot-toggle-button:hover {
+      transform: translateY(-2px) scale(1.02);
+    }
+
+    .chatbot-toggle-button:focus {
+      outline: 2px solid #90caf9;
+      outline-offset: 3px;
+    }
+
+    .chatbot-toggle-button img {
+      width: 70%;
+      height: 70%;
+      display: block;
+      object-fit: cover;
+      padding: 0;
+      box-sizing: border-box;
+      border-radius: 0;
+      background: transparent;
+      clip-path: circle(50%);
+    }
+
+    @keyframes floatUp {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+      100% { transform: translateY(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .chatbot-toggle-button {
+        animation: none;
+      }
+    }
+  </style>
+  <button id="chatbot-toggle" class="chatbot-toggle-button" aria-label="Open Chat" title="Open Chat">
+      <img src="/assets/fairbot/images/bot.png" alt="Chatbot">
+  </button>
 `;
 
 
@@ -155,6 +234,9 @@ document.addEventListener('DOMContentLoaded', function () {
   
   // ► STEP 3. Select Elements and Setup Event Handlers
   var chatWithAIButton = document.getElementById('chat-with-ai')
+  var chatLauncher = document.getElementById('chat-launcher');
+  var chatLauncherMini = document.getElementById('chatbot-toggle');
+  var chatLauncherClose = document.getElementById('chat-launcher-close');
   var chatbotClose = document.getElementById('chatbot-close');
   var chatbotMinimize = document.getElementById('chatbot-minimize');
   var chatForm = document.getElementById('chat-form');
@@ -162,12 +244,45 @@ document.addEventListener('DOMContentLoaded', function () {
   var chatWindow = document.getElementById('chat-window');
   var chatOptions = document.getElementById("chat-options");
   var isMinimized = false;
+
+  function showLauncher() {
+    if (chatLauncher) chatLauncher.style.display = 'flex';
+    if (chatLauncherMini) chatLauncherMini.style.display = 'none';
+  }
+
+  function showLauncherMini() {
+    if (chatLauncher) chatLauncher.style.display = 'none';
+    if (chatLauncherMini) chatLauncherMini.style.display = 'flex';
+  }
+
+  if (chatLauncherClose) {
+    chatLauncherClose.onclick = function () {
+      showLauncherMini();
+    };
+  }
+
+  if (chatLauncherMini) {
+    chatLauncherMini.onclick = function () {
+      if (chatWithAIButton) {
+        chatWithAIButton.click();
+      }
+    };
+    chatLauncherMini.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        if (chatWithAIButton) {
+          chatWithAIButton.click();
+        }
+      }
+    });
+  }
   
     
     
   chatWithAIButton.onclick = function () {
       chatbotContainer.classList.add('active');
-      document.getElementById('chat-launcher').style.display = 'none';
+      if (chatLauncher) chatLauncher.style.display = 'none';
+      if (chatLauncherMini) chatLauncherMini.style.display = 'none';
       
       if (!chatWindow.dataset.hasWelcome) {
           var welcomeMessage = document.createElement('div');
@@ -196,7 +311,7 @@ document.addEventListener('DOMContentLoaded', function () {
   
   chatbotClose.onclick = function () {
       chatbotContainer.classList.remove('active');
-      document.getElementById('chat-launcher').style.display = 'flex';
+      showLauncherMini();
   };
   
   chatbotMinimize.onclick = function () {
